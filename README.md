@@ -1,0 +1,2 @@
+# PDRX_ShareToken_Tool
+定期更新PandoraNext所需的share_token
