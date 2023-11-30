@@ -1,5 +1,5 @@
-
-# Talk to GPT-4
+  
+# Pair Programming with ChatGPT (GPT-4)
 
 
 ***User***
@@ -156,8 +156,7 @@ Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时�
 好的。在 Step 3 中，我们需要调用 Pandora 的相关接口来获取 share_token. 获取 share_token 需要通过 2 步来实现：
 
 1. 获取 access_token：通过调用 /api/auth/login 接口获取。该接口的接口文档如下：
-
-/auth/login
+```
 HTTP 方法：POST
 请求类型：application/x-www-form-urlencoded
 请求字段：
@@ -165,8 +164,9 @@ username：账号
 password：密码
 返回字段：返回 Access Token 和 Session Token 等信息
 频率控制：根据 IP 地址 6/1m 限制，被限制时返回 429 错误码
+```
 
-```sh
+```bash
 curl --location '/auth/login' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
 --data-urlencode 'username=<username>' \
@@ -185,6 +185,7 @@ Response 示例：
 ```
 
 2. 获取 share_token：通过调用 /api/token/register 接口获取。该接口的接口文档如下：
+```
 接口描述：注册或更新 Share Token
 HTTP 方法：POST
 请求类型：application/x-www-form-urlencoded
@@ -196,8 +197,9 @@ expires_in：Share Token 的有效期，单位为：秒，为 0 时表示与 Acc
 show_conversations：是否进行会话隔离，true 或 false，默认为 false
 show_userinfo：是否隐藏 邮箱 等账号信息，true 或 false，默认为 false
 返回字段：返回 Share Token 等信息
+```
 
-```sh
+```bash
 curl --location '/token/register' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
 --data-urlencode 'unique_name=fakeopen' \
