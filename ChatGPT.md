@@ -486,3 +486,65 @@ pool_token：可留空，留空时生成新 pool_token 不为空则更新 pool_t
 
 ***Assistant***
 
+为了实现这个新功能，我们需要执行以下步骤：
+
+1. **检查并读取 `PoolToken.txt` 文件**：检查该文件是否存在，如果存在，则读取其中的 `pool_token`。
+2. **实现调用 `/pool/update` 接口的功能**：编写函数以发送请求到此接口，以注册或更新 `pool_token`。
+3. **在更新 `share_token` 时更新 `pool_token`**：每当 `share_token` 被更新，调用 `/pool/update` 接口更新 `pool_token`。
+4. **处理 `PoolToken.txt` 文件**：如果文件不存在或内容不符合格式，调用接口获取新的 `pool_token` 并写入文件。
+
+### 实现代码
+
+1. **检查并读取 `PoolToken.txt` 文件的函数**：
+    ```typescript
+    function readPoolToken(): string | null {
+      try {
+        if (fs.existsSync('PoolToken.txt')) {
+          const poolToken = fs.readFileSync('PoolToken.txt', 'utf8').trim();
+          const isValidToken = /^pk-[0-9a-zA-Z_\-]{43}$/.test(poolToken);
+          return isValidToken ? poolToken : null;
+        }
+      } catch (error) {
+        console.error('Error reading PoolToken.txt:', error);
+      }
+      return null;
+    }
+    ```
+
+2. **实现调用 `/pool/update` 接口的函数**：
+    ```typescript
+    async function updatePoolToken(shareTokens: string[], existingPoolToken?: string): Promise<string> {
+      const data = qs.stringify({
+        'share_tokens': shareTokens.join('\n'),
+        'pool_token': existingPoolToken || ''
+      });
+
+      const config = {
+        method: 'post',
+        url: 'http://<PandoraHost>/pool/update',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        data: data
+      };
+
+      try {
+        const response = await axios.request(config);
+        return response.data.pool_token;
+      } catch (error) {
+        console.error('Error updating pool token:', error);
+        throw error;
+      }
+    }
+    ```
+
+3. **在更新 `share_token` 时调用更新 `pool_token` 的逻辑**：
+    - 在之前实现的定时检查逻辑中，每次更新 `share_token` 后，调用 `updatePoolToken` 函数。
+    - 需要传递所有账户的最新 `share_token` 列表和已存在的 `pool_token`（如果有的话）。
+
+4. **处理 `PoolToken.txt` 文件**：
+    - 如果 `PoolToken.txt` 文件不存在或内容不符合格式，则通过调用接口获取新的 `pool_token` 并写入文件。
+
+5. **整合代码**：
+    - 在 `index.ts` 中整合上述代码。
+    - 确保所有函数和错误处理都已正确设置。
+
+这样，我们就添加了检查 `PoolToken.txt` 文件、更新 `pool_token` 以及在更新 `share_token` 时同步更新 `pool_token` 的功能。编译并测试程序以确保功能正常运行。如果有任何问题或需要进一步的帮助，请随时告诉我。
