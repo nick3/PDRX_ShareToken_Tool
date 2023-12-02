@@ -6,13 +6,9 @@
 
 你是一名熟练掌握 TypeScript 的程序员，下面你需要协助我从零开始使用 TypeScript 一步一步完成一个工具程序的代码编写任务。我主要负责程序逻辑的设计，你主要负责程序逻辑的代码实现。
 该程序用来实现定期更新 Pandora（一个接口服务器）所需的 share_token. 我对程序的主要逻辑设计是这样的：
-
-Step 1 - 程序启动时通过使用 dotenv 库读取基础配置文件。配置文件中包含访问 Pandora 服务器的 Protocol, Host, Port，以及 TokenPath(该路径文件存储需要获取 share_token 的账号信息的配置)
-
-Step 2 - 读取 TokenPath 所指向的文件的内容，该文件是一个 JSON 格式的文件，里面包含了多个账号的用户名与密码以及对应用户的 share_token 的更新时间
-
-Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时间就检测对应账号的 share_token 是否快要过期。如果是，则调用 Pandora 的授权接口重新获取 share_token，并更新 TokenPath 所指向的文件的该账号的 share_token 的更新时间
-
+* Step 1 - 程序启动时通过使用 dotenv 库读取基础配置文件。配置文件中包含访问 Pandora 服务器的 Protocol, Host, Port，以及 TokenPath(该路径文件存储需要获取 share_token 的账号信息的配置)
+* Step 2 - 读取 TokenPath 所指向的文件的内容，该文件是一个 JSON 格式的文件，里面包含了多个账号的用户名与密码以及对应用户的 share_token 的更新时间
+* Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时间就检测对应账号的 share_token 是否快要过期。如果是，则调用 Pandora 的授权接口重新获取 share_token，并更新 TokenPath 所指向的文件的该账号的 share_token 的更新时间
 以上就是该程序的主要逻辑。
 接下来我们来完成每一步逻辑的实现代码，并完善相关细节。
 首先请你实现 Step 1 的代码。
