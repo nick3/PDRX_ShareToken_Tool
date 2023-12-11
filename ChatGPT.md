@@ -1,14 +1,17 @@
-
-# Talk to GPT-4
+  
+# Pair Programming with ChatGPT (GPT-4)
 
 
 ***User***
 
 你是一名熟练掌握 TypeScript 的程序员，下面你需要协助我从零开始使用 TypeScript 一步一步完成一个工具程序的代码编写任务。我主要负责程序逻辑的设计，你主要负责程序逻辑的代码实现。
 该程序用来实现定期更新 Pandora（一个接口服务器）所需的 share_token. 我对程序的主要逻辑设计是这样的：
-Step 1 - 程序启动时通过使用 dotenv 库读取基础配置文件。配置文件中包含访问 Pandora 服务器的 Protocol, Host, Port，以及 TokenPath(该路径文件存储需要获取 share_token 的账号信息的配置)
-Step 2 - 读取 TokenPath 所指向的文件的内容，该文件是一个 JSON 格式的文件，里面包含了多个账号的用户名与密码以及对应用户的 share_token 的更新时间
-Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时间就检测对应账号的 share_token 是否快要过期。如果是，则调用 Pandora 的授权接口重新获取 share_token，并更新 TokenPath 所指向的文件的该账号的 share_token 的更新时间
+
+
+* Step 1 - 程序启动时通过使用 dotenv 库读取基础配置文件。配置文件中包含访问 Pandora 服务器的 Protocol, Host, Port，以及 TokenPath(该路径文件存储需要获取 share_token 的账号信息的配置)
+* Step 2 - 读取 TokenPath 所指向的文件的内容，该文件是一个 JSON 格式的文件，里面包含了多个账号的用户名与密码以及对应用户的 share_token 的更新时间
+* Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时间就检测对应账号的 share_token 是否快要过期。如果是，则调用 Pandora 的授权接口重新获取 share_token，并更新 TokenPath 所指向的文件的该账号的 share_token 的更新时间
+
 以上就是该程序的主要逻辑。
 接下来我们来完成每一步逻辑的实现代码，并完善相关细节。
 首先请你实现 Step 1 的代码。
@@ -156,8 +159,7 @@ Step 3 - 对上面每个账号设定一个独立的计时器，每隔一段时�
 好的。在 Step 3 中，我们需要调用 Pandora 的相关接口来获取 share_token. 获取 share_token 需要通过 2 步来实现：
 
 1. 获取 access_token：通过调用 /api/auth/login 接口获取。该接口的接口文档如下：
-
-/auth/login
+```
 HTTP 方法：POST
 请求类型：application/x-www-form-urlencoded
 请求字段：
@@ -165,8 +167,9 @@ username：账号
 password：密码
 返回字段：返回 Access Token 和 Session Token 等信息
 频率控制：根据 IP 地址 6/1m 限制，被限制时返回 429 错误码
+```
 
-```sh
+```bash
 curl --location '/auth/login' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
 --data-urlencode 'username=<username>' \
@@ -185,6 +188,7 @@ Response 示例：
 ```
 
 2. 获取 share_token：通过调用 /api/token/register 接口获取。该接口的接口文档如下：
+```
 接口描述：注册或更新 Share Token
 HTTP 方法：POST
 请求类型：application/x-www-form-urlencoded
@@ -196,8 +200,9 @@ expires_in：Share Token 的有效期，单位为：秒，为 0 时表示与 Acc
 show_conversations：是否进行会话隔离，true 或 false，默认为 false
 show_userinfo：是否隐藏 邮箱 等账号信息，true 或 false，默认为 false
 返回字段：返回 Share Token 等信息
+```
 
-```sh
+```bash
 curl --location '/token/register' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
 --data-urlencode 'unique_name=fakeopen' \
