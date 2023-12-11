@@ -5,3 +5,4 @@ node_modules
 /tokens.json
 /.vscode
 /poolTokens.json
+.DS_Store

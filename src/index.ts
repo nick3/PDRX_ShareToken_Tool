@@ -2,6 +2,7 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import axios from "axios";
 import qs from "qs";
+import { Command } from 'commander';
 
 dotenv.config();
 
@@ -11,11 +12,22 @@ const config = {
   port: process.env.PORT,
   accountsPath: process.env.ACCOUNTS_PATH,
 	poolTokenPath: process.env.POOL_TOKEN_PATH,	
+  apiPrefix: process.env.PROXY_API_PREFIX
 };
 
-const PANDORA_BASE_URL = `${config.protocol}://${config.host}:${config.port}`;
+const PANDORA_BASE_URL = `${config.protocol}://${config.host}:${config.port}/${config.apiPrefix}`;
 
 console.log(config);
+
+const program = new Command();
+program
+  .version('0.1')
+  .option('-f, --force', 'Force refresh tokens');
+program.parse(process.argv);
+
+let queue: { accountKey: string; accounts: Accounts; forceRefresh: boolean; }[] = [];
+const maxCallsPerMinute = 5;
+let intervalId: string | number | NodeJS.Timeout | undefined;
 
 interface AccountInfo {
   token: string;
@@ -31,7 +43,7 @@ interface Accounts {
 const checkAndRefreshToken = async (accounts: Accounts, accountKey: string, forceRefresh = false) => {
 	console.log('Checking and refreshing token for', accountKey);
 	const account = accounts[accountKey];
-	if (forceRefresh ||isTokenExpiring(account.updateTime)) {
+	if (forceRefresh || isTokenExpiring(account.updateTime)) {
 		console.log(`${accountKey} has expired. Refreshing...`);
 		try {
 			const newAccessToken = await getAccessToken(account.username, account.userPassword);
@@ -154,7 +166,7 @@ async function updatePoolToken(shareTokens: string[], existingPoolToken?: string
   }
 }
 
-const PTU_DURATION = 1000
+const PTU_DURATION = 70000
 let shareTokens: string[] = [];
 type Timer = NodeJS.Timeout | null;
 let timer: Timer = null;
@@ -184,29 +196,52 @@ async function addShareTokenToPool(): Promise<void> {
 	}
 }
 
+function processQueue() {
+  if (!queue.length) {
+      clearInterval(intervalId);
+      intervalId = undefined;
+      return;
+  }
+
+  const tasks = queue.splice(0, maxCallsPerMinute);
+  tasks.forEach(async (task) => {
+      const { accountKey, accounts, forceRefresh } = task;
+      await checkAndRefreshToken(accounts, accountKey, forceRefresh);
+  });
+}
+
 try {
 	if (!config.accountsPath) {
 		console.error("AccountsPath is not defined in env.");
 		process.exit(1);
 	}
-  const rawData = fs.readFileSync(config.accountsPath!, "utf8");
-  const accounts: Accounts = JSON.parse(rawData);
 
-  console.log(accounts);
+  const mainProcess = () => {
+    const rawData = fs.readFileSync(config.accountsPath!, "utf8");
+    const accounts: Accounts = JSON.parse(rawData);
+  
+    console.log(accounts);
 
-	console.log('Check pool token');
-	const poolToken = readPoolToken();
-	let forceRefresh = false;
-	if (!poolToken) {
-		forceRefresh = true;
-	}
+    console.log('Check pool token');
+    const poolToken = readPoolToken();
 
-	Object.keys(accounts).forEach(async (accountKey) => {
-		await checkAndRefreshToken(accounts, accountKey, forceRefresh);
-		setInterval(async () => {
-			await checkAndRefreshToken(accounts, accountKey);
-		}, 6 * 60 * 60 * 1000); // Check every 6 hours
-	});
+    let forceRefresh = false;
+    if (!poolToken || program.opts().force) {
+      forceRefresh = true;
+    }
+    Object.keys(accounts).forEach(accountKey => {
+      queue.push({ accountKey, accounts, forceRefresh });
+    });
+    if (!intervalId) {
+      intervalId = setInterval(processQueue, 60000 / maxCallsPerMinute);
+    }
+  }
+
+  // 定时检查
+  setInterval(mainProcess, 6 * 60 * 60 * 1000); // 每 6 小时检查一次
+
+  // 立即启动第一轮处理
+  mainProcess();
 } catch (error) {
   console.error("Error reading or parsing the token file:", error);
 }
