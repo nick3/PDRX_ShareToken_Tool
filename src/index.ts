@@ -26,7 +26,7 @@ program.parse(process.argv);
 let queue: { accountKey: string; accounts: Accounts; forceRefresh: boolean }[] =
   [];
 const maxCallsPerMinute = 5;
-let intervalId: string | number | NodeJS.Timeout | undefined;
+let intervalId: NodeJS.Timeout | undefined;
 
 interface AccountInfo {
   token: string;
