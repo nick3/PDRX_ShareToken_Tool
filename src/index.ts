@@ -13,6 +13,7 @@ const config = {
   accountsPath: process.env.ACCOUNTS_PATH,
   poolTokenPath: process.env.POOL_TOKEN_PATH,
   apiPrefix: process.env.PROXY_API_PREFIX,
+  tokenExpiredDuration: process.env.TOKEN_EXPIRED_DURATION ? (parseInt(process.env.TOKEN_EXPIRED_DURATION) || 10) : 10,
 };
 
 const PANDORA_BASE_URL = `${config.protocol}://${config.host}:${config.port}/${config.apiPrefix}`;
@@ -130,7 +131,7 @@ function isTokenExpiring(
   hoursUntilExpire: number = 12
 ): boolean {
   const lastUpdate = new Date(updateTime);
-  const expireTime = new Date(lastUpdate.getTime() + 10 * 24 * 60 * 60 * 1000); // 10 days in milliseconds
+  const expireTime = new Date(lastUpdate.getTime() + config.tokenExpiredDuration * 24 * 60 * 60 * 1000);
   const currentTime = new Date();
   const hoursLeft =
     (expireTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60); // Convert milliseconds to hours
